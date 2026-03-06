@@ -1,0 +1,504 @@
+\documentclass{article}
+
+% Language setting
+\usepackage[english]{babel}
+
+% Set page size and margins
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+% Julia syntax highlighting
+\lstdefinelanguage{Julia}{
+    keywords={function, end, if, else, elseif, for, while, return, struct, mutable, const, module, using, import, export, true, false, begin},
+    sensitive=true,
+    comment=[l]{\#},
+    morecomment=[s]{\#=}{=\#},
+    morestring=[b]",
+}
+
+\lstset{
+    language=Julia,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    literate={≈}{{$\approx$}}1
+}
+
+\title{Development Standards - Julia}
+\author{VITEX LUCENS}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This document defines the coding standards for all Vitex Lucens Julia projects. These standards ensure consistency and maintainability across the organization.
+\tableofcontents
+
+
+\newpage
+\section{Function Layout}
+
+\subsection{General Principles}
+\begin{itemize}
+    \item Avoid nested functions (use separate functions instead).
+    \item Avoid use of global variables (use function parameters or constants).
+    \item All variables should be initiated at the beginning of a function when possible.
+    \item Do not reassign variable names that are passed into a function.
+    \item Do not change variable names after initiation.
+    \item All functions start with a docstring (see comment sections for example).
+    \item When inputting/outputting multiple values, consider using NamedTuples for clarity.
+\end{itemize}
+
+\subsection{Function Example}
+
+\begin{lstlisting}
+"""
+    calculate_distance_FUNC(point1_M::Vector{Float64}, 
+                           point2_M::Vector{Float64}) -> Float64
+
+Calculates the Euclidean distance between two points.
+
+# Arguments
+- `point1_M::Vector{Float64}`: First point coordinates in meters (3x1)
+- `point2_M::Vector{Float64}`: Second point coordinates in meters (3x1)
+
+# Returns
+- `Float64`: Distance between points in meters
+
+# Examples
+```julia
+p1_M = [0.0, 0.0, 0.0]
+p2_M = [3.0, 4.0, 0.0]
+distance_M = calculate_distance_FUNC(p1_M, p2_M)  # Returns 5.0
+```
+"""
+function calculate_distance_FUNC(point1_M::Vector{Float64}, 
+                                point2_M::Vector{Float64})
+    # Calculate difference vector
+    delta_M = point2_M - point1_M
+    
+    # Calculate Euclidean distance
+    distance_M = sqrt(sum(delta_M.^2))
+    
+    return distance_M
+end
+\end{lstlisting}
+\newpage
+\subsection{Julia-Specific Notes}
+\begin{itemize}
+    \item Functions automatically return the last expression (explicit \texttt{return} is optional but recommended for clarity).
+    \item Use \texttt{::Type} annotations for function arguments in public APIs.
+    \item Multiple return values use tuples or NamedTuples: \texttt{return (value1, value2)} or \texttt{return (name1=value1, name2=value2)}
+    \item Use \texttt{!} suffix for functions that modify their arguments (e.g., \texttt{sort!()})
+\end{itemize}
+
+\section{Module and Package Structure}
+
+\subsection{Directory Structure}
+\begin{verbatim}
+ProjectName/
+|-- Project.toml              # Package metadata and dependencies
+|-- src/
+|   |-- ProjectName.jl        # Main module file
+|   |-- submodule1/
+|   |   |-- types.jl          # Type definitions
+|   |   +-- functions.jl      # Functions
+|   +-- submodule2/
+|-- test/
+|   +-- runtests.jl           # Test suite
++-- docs/
+    +-- coding_standards.tex
+\end{verbatim}
+
+\subsection{Module Structure}
+\begin{lstlisting}
+module ProjectName
+
+# Import external dependencies
+using LinearAlgebra
+using StaticArrays
+
+# Include source files
+include("types.jl")
+include("core_functions.jl")
+include("utilities.jl")
+
+# Export public API
+export MyType
+export calculate_something_FUNC
+export process_data_FUNC
+
+end # module
+\end{lstlisting}
+\newpage
+\section{In-Code Commenting Style}
+
+\subsection{Docstrings}
+All public functions must have docstrings using Julia's triple-quote syntax:
+\begin{lstlisting}
+"""
+    function_name(arg1, arg2) -> ReturnType
+
+Brief description.
+
+# Arguments
+- `arg1::Type`: Description
+- `arg2::Type`: Description
+
+# Returns
+- `ReturnType`: Description
+
+# Examples
+```julia
+result = function_name(1.0, 2.0)
+```
+"""
+\end{lstlisting}
+
+\subsection{Inline Comments}
+\begin{itemize}
+    \item Use \texttt{\#} for single-line comments
+    \item Use \texttt{\#= ... =\#} for multi-line comments
+    \item If a line of code is temporary (e.g., just for testing), use the comment \texttt{\# temp}
+    \item Comment \textit{why}, not \textit{what} (code should be self-documenting)
+\end{itemize}
+
+\newpage
+\section{Variable Naming Conventions}
+
+\subsection{General Rules}
+\begin{itemize}
+    \item Name variables using \texttt{snake\_case}.
+    \item Append units/type suffix to variable name in UPPERCASE.
+    \item Function names should end in \texttt{\_FUNC}.
+    \item Type/Struct names should use \texttt{CamelCase}.
+    \item Constants use lowercase with \texttt{k} prefix and UPPERCASE suffix (kCONSTANT).
+    \item Avoid vectors/arrays containing multiple units or types.
+    \item Use descriptive naming for variables.
+\end{itemize}
+
+\subsection{Suffix Convention}
+
+\noindent\textbf{IMPORTANT:} ALL variables must have a suffix indicating their type/unit.
+
+\subsubsection{Examples}
+Variables with known, fixed physical units:
+
+\begin{lstlisting}
+shaft_length_M      = [5.0; 0.0; 0.0]
+shaft_rot_angle_RAD = 0.2
+rotation_mx_ND      = ones(3, 3)
+var1_DIM            = 100.0  # Could be meters, mm, etc.
+aspect_ratio_ND     = 3.5
+iteration_CNT       = 0
+current_IDX         = 1
+is_valid_FLAG       = true
+filename_STR        = "output.txt"
+config_DICT         = Dict("key_STR" => "value_M")
+const kGRAVITY_MPS2 = 9.81
+\end{lstlisting}
+
+\newpage
+\section{Unit Suffixes Reference}
+
+\subsection{Physical Units}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Code} & \textbf{Units} & \textbf{Description} & \textbf{Dimension} \\
+\hline
+\_M & meters & distance & 3x1 or scalar \\
+\hline
+\_FT & feet & distance & 3x1 or scalar \\
+\hline
+\_MM & millimeters & distance & 3x1 or scalar \\
+\hline
+\_M2 & meters squared & area & scalar \\
+\hline
+\_M3 & meters cubed & volume & scalar \\
+\hline
+\_MPS & meters per second & velocity & 3x1 or scalar \\
+\hline
+\_MPS2 & meters per second squared & acceleration & 3x1 or scalar \\
+\hline
+\_N & Newtons & force & 3x1 or scalar \\
+\hline
+\_KGM2 & kilogram meters squared & moment of inertia & 3x3 \\
+\hline
+\_KGPS & kilograms per second & mass flow rate & scalar \\
+\hline
+\_S & seconds & time & scalar \\
+\hline
+\_KG & kilograms & mass & scalar \\
+\hline
+\_K & kelvin & temperature & scalar \\
+\hline
+\_PA & pascal & pressure & scalar \\
+\hline
+\_J & joules & energy & scalar \\
+\hline
+\_RAD & radians & angle & scalar \\
+\hline
+\_DEG & degrees & angle & scalar \\
+\hline
+\_KGPM2 & kg per square meter & area density & scalar \\
+\hline
+\_KGPM3 & kg per cubic meter & density & scalar \\
+\hline
+\_ND & Non dimensional & No units  & NA \\
+\hline
+\_DIM & Any unit/Dimension & Any units & NA \\
+\hline
+\end{tabular}
+\caption{Physical unit suffixes}
+\end{table}
+
+
+
+\subsection{Non-Physical Variable Suffixes}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Code} & \textbf{Type} & \textbf{Description} \\
+\hline
+\_IDX & index & Integer index \\
+\hline
+\_CNT & counter & Integer counter \\
+\hline
+\_FLAG & boolean flag & True/false value \\
+\hline
+\_BOOL & boolean & True/false value \\
+\hline
+\_STR & string & Text/string \\
+\hline
+\_ARR & array & Array/collection \\
+\hline
+\_DICT & dictionary & Dictionary/hash map \\
+\hline
+\end{tabular}
+\caption{Non-physical variable suffixes}
+\end{table}
+
+\newpage
+\subsection{Common Abbreviations}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Code} & \textbf{Name} \\
+\hline
+frc & force \\
+\hline
+func & function \\
+\hline
+mom & moment of inertia \\
+\hline
+vol & volume \\
+\hline
+acc & acceleration \\
+\hline
+vel & velocity \\
+\hline
+mfr & mass flow rate \\
+\hline
+rot & rotation \\
+\hline
+mx & matrix \\
+\hline
+vec & vector \\
+\hline
+arr & array \\
+\hline
+pos & position \\
+\hline
+ang & angle \\
+\hline
+num & number of ... \\
+\hline
+delta & change in ... \\
+\hline
+diff & difference between ... \\
+\hline
+cap & capacity \\
+\hline
+const & constant \\
+\hline
+pres & pressure \\
+\hline
+pow & power \\
+\hline
+gen & generate \\
+\hline
+pt & point \\
+\hline
+\end{tabular}
+\caption{Common abbreviations}
+\end{table}
+
+\newpage
+\section{File Naming Conventions}
+
+\subsection{Julia Files}
+\begin{itemize}
+    \item Use \texttt{snake\_case.jl} for file names (Julia convention)
+    \item Module files use \texttt{CamelCase.jl} matching the module name
+    \item File names should reflect their primary content
+    \item Type definition files may use \texttt{CamelCase.jl} matching the type name
+\end{itemize}
+
+\subsection{Examples}
+\begin{verbatim}
+AirshipDesign.jl          # Main module
+motor_placement.jl        # Functions
+vehicle_types.jl          # Type definitions
+get_design_parameters.jl  # Utility functions
+\end{verbatim}
+
+\newpage
+\section{Testing}
+
+\noindent All functions should have corresponding tests:
+
+\vspace{0.5em}
+
+\begin{lstlisting}
+using Test
+using YourModule
+
+@testset "Distance Calculation" begin
+    p1_M = [0.0, 0.0, 0.0]
+    p2_M = [3.0, 4.0, 0.0]
+    
+    distance_M = calculate_distance_FUNC(p1_M, p2_M)
+    
+    @test distance_M ≈ 5.0
+    @test distance_M > 0
+end
+
+@testset "Data Processing" begin
+    input_data_M = [1.0, 2.0, 3.0, 4.0, 5.0]
+    
+    result = process_data_FUNC(input_data_ARR)
+    
+    @test length(result) == length(input_data_M)
+    @test all(result .>= 0)
+end
+\end{lstlisting}
+
+\newpage
+\section{Best Practices}
+
+\subsection{Type Stability}
+\begin{itemize}
+    \item Prefer type-stable code (return types should be predictable)
+    \item Use type annotations in struct definitions
+    \item Avoid changing variable types within a function
+\end{itemize}
+
+\subsection{Immutability}
+\begin{itemize}
+    \item Prefer immutable \texttt{struct} over \texttt{mutable struct}
+    \item Use \texttt{mutable struct} only when modification is required
+\end{itemize}
+
+\subsection{Package Dependencies}
+\begin{itemize}
+    \item Use \texttt{LinearAlgebra} for matrix operations (standard library)
+    \item Use \texttt{StaticArrays.jl} for small fixed-size arrays (performance)
+    \item Use \texttt{Test} for unit testing (standard library)
+    \item Consider \texttt{Unitful.jl} for automatic unit checking (advanced)
+    \item Choose well-maintained, registered packages from the Julia ecosystem
+\end{itemize}
+
+\newpage
+\section{Git Workflow}
+\begin{itemize}
+    \item The main branch should never be pushed to!!! Or worked on!!
+    \item Check out a new branch. \textit{Branches should be comprehensively named in snake\_case (Julia convention).}
+    \item Work in your branch.
+    \item Squash commits. \textit{See section on Squash for merge.}
+    \item Push your branch and request a review before merging.
+    \item Merge your branch into main.
+\end{itemize}
+
+\subsection{Squash for Merge}
+
+\noindent\large \textbf{WARNING: THIS CAN PERMANENTLY DELETE YOUR WORK}
+\normalsize
+
+\vspace{0.5em}
+\begin{itemize}
+    \item \textbf{git branch} \textit{Check you are in the correct branch}
+    \item \textbf{git log}
+    \item Copy the \textbf{hash} of the last commit in your branch before your first commit in this branch. This should have been the last commit in the main branch when you checked out and started working on this branch.
+    \item \textbf{git reset --soft \textit{\textless{}\# number copied from previous step\textgreater{}}}
+    \item \textbf{git status} \textit{You should see every change made in this branch staged for commit.}
+    \item \textbf{git commit}
+    \item Delete the comments that are there and enter your \textbf{Final Commit}. \textit{See Final commit style section for styling}
+    \item \textbf{git status} \textit{Check that all staged changes have been committed}
+    \item \textbf{git log} \textit{Check that the commit history looks correct}
+    \item \textbf{git branch} \textit{Check that you are on the right branch}
+    \item \textbf{git push --force} \textit{Overwrite the branch history on remote}
+\end{itemize}
+
+\newpage
+\subsection{Final Commit Style}
+
+\noindent\textbf{Format:}
+
+\begin{flushleft}
+Title: This is a short description of what was done in this branch.\\
+
+\vspace{1em}
+\text{Description:}\\
+\hspace*{2em}- Change one.\\
+\hspace*{2em}- Change two.\\
+\hspace*{2em}- etc\\
+
+\vspace{1em}
+\text{Testing:}\\
+\hspace*{2em}- Test one.\\
+\hspace*{2em}- Test two.\\
+\hspace*{2em}- etc\\
+\end{flushleft}
+
+\subsection{Common Git Commands}
+\begin{itemize}
+    \item \textbf{git status} \textit{Shows your commit staging status}
+    \item \textbf{git branch} \textit{Shows you all branches in the repo and your current branch}
+    \item \textbf{git checkout -b \textless{}\textit{new\_branch\_name}\textgreater{}} \textit{Creates a new branch from your current branch}
+    \item \textbf{git checkout \textless{}\textit{branch\_name}\textgreater{}} \textit{Switches to a different branch}
+    \item \textbf{git checkout \textless{}\textit{other\_branch\_name}\textgreater{} -- path/to/your/file} \textit{Pulls a file from another branch into your branch}
+    \item \textbf{git log} \textit{Shows your git commit history}
+    \item \textbf{git add \textless{}\textit{files to add}\textgreater{}} \textit{Adds the changed files to the staging area}
+    \item \textbf{git commit -m \textless{}"Commit message"\textgreater{}} \textit{Commits changes in the staging area}
+    \item \textbf{git pull} \textit{Pulls updates from the remote onto your local branch}
+    \item \textbf{git push} \textit{Pushes updates from your local branch to the remote}
+    \item \textbf{git push --force} \textit{Overwrites the remote branch with your local branch}
+    \item \textbf{git stash} \textit{Stashes the changes in your working directory}
+    \item \textbf{git stash pop} \textit{Unstashes your last stashed changes}
+    \item \textbf{git reset --hard \textless{}\textit{old commit \#}\textgreater{}} \textit{Deletes all changes and commits after the chosen hash}
+    \item \textbf{git reset --soft \textless{}\textit{old commit \#}\textgreater{}} \textit{Deletes commits after the chosen hash}
+\end{itemize}
+
+\newpage
+\end{document}
