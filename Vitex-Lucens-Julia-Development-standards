@@ -67,7 +67,7 @@ This document defines the coding standards for all Vitex Lucens Julia projects. 
 
 \begin{lstlisting}
 """
-    calculate_distance_FUNC(point1_M::Vector{Float64}, 
+    calculate_distance_fnc(point1_M::Vector{Float64}, 
                            point2_M::Vector{Float64}) -> Float64
 
 Calculates the Euclidean distance between two points.
@@ -83,10 +83,10 @@ Calculates the Euclidean distance between two points.
 ```julia
 p1_M = [0.0, 0.0, 0.0]
 p2_M = [3.0, 4.0, 0.0]
-distance_M = calculate_distance_FUNC(p1_M, p2_M)  # Returns 5.0
+distance_M = calculate_distance_fnc(p1_M, p2_M)  # Returns 5.0
 ```
 """
-function calculate_distance_FUNC(point1_M::Vector{Float64}, 
+function calculate_distance_fnc(point1_M::Vector{Float64}, 
                                 point2_M::Vector{Float64})
     # Calculate difference vector
     delta_M = point2_M - point1_M
@@ -111,15 +111,19 @@ end
 \subsection{Directory Structure}
 \begin{verbatim}
 ProjectName/
-|-- Project.toml              # Package metadata and dependencies
+|-- Project.toml
 |-- src/
-|   |-- ProjectName.jl        # Main module file
-|   |-- submodule1/
-|   |   |-- types.jl          # Type definitions
-|   |   +-- functions.jl      # Functions
-|   +-- submodule2/
+|   |-- ProjectName.jl                    # Main module file
+|   |-- design_parameters/
+|   |   |-- designParameters.jl           # DesignParameters struct
+|   |   |-- get_design_parameters_fnc.jl # get_design_parameters_fnc()
+|   |   +-- example_airship_parameters_fnc.jl # example_airship_parameters_fnc()
+|   |-- motors/
+|   |   +-- motor_placement_fnc.jl       # motor_placement_fnc()
+|   +-- fins/
+|       +-- fin_sizing_fnc.jl            # fin_sizing_fnc()
 |-- test/
-|   +-- runtests.jl           # Test suite
+|   +-- runtests.jl
 +-- docs/
     +-- coding_standards.tex
 \end{verbatim}
@@ -132,18 +136,49 @@ module ProjectName
 using LinearAlgebra
 using StaticArrays
 
-# Include source files
-include("types.jl")
-include("core_functions.jl")
-include("utilities.jl")
+# Include source files (order matters - dependencies first!)
+include("design_parameters/designParameters.jl")
+include("design_parameters/get_design_parameters_fnc.jl")
+include("design_parameters/example_airship_parameters_fnc.jl")
 
 # Export public API
-export MyType
-export calculate_something_FUNC
-export process_data_FUNC
+export DesignParameters
+export get_design_parameters_fnc
+export example_airship_parameters_fnc
 
 end # module
 \end{lstlisting}
+\newpage
+\section{File Naming Conventions}
+
+\subsection{General Rules}
+\begin{itemize}
+    \item Use \texttt{snake\_case.jl} for all files.
+    \item One function definition per file.
+    \item Module files use \texttt{CamelCase.jl} matching the module name.
+    \item File name should match the function name exactly.
+    \item Folder names use \texttt{snake\_case}.
+\end{itemize}
+
+\subsection{Examples}
+\begin{verbatim}
+# Main module file
+DesignAirship.jl
+
+# Function files (file name matches function name exactly)
+get_design_parameters_fnc.jl     # Contains: get_design_parameters_fnc()
+example_airship_parameters_fnc.jl # Contains: example_airship_parameters_fnc()
+motor_placement_fnc.jl           # Contains: motor_placement_fnc()
+
+# Struct files (file name matches struct name)
+designParameters.jl               # Contains: DesignParameters struct
+vehicleConfig.jl                  # Contains: VehicleConfig struct
+
+# Folder structure
+design_parameters/              # Folder: snake_case
+utilities/                      # Folder: snake_case
+\end{verbatim}
+
 \newpage
 \section{In-Code Commenting Style}
 
@@ -184,7 +219,7 @@ result = function_name(1.0, 2.0)
 \begin{itemize}
     \item Name variables using \texttt{snake\_case}.
     \item Append units/type suffix to variable name in UPPERCASE.
-    \item Function names should end in \texttt{\_FUNC}.
+    \item Function names should end in \texttt{\_fnc}.
     \item Type/Struct names should use \texttt{CamelCase}.
     \item Constants use lowercase with \texttt{k} prefix and UPPERCASE suffix (kCONSTANT).
     \item Avoid vectors/arrays containing multiple units or types.
@@ -308,7 +343,7 @@ const kGRAVITY_MPS2 = 9.81
 \hline
 frc & force \\
 \hline
-func & function \\
+fnc & function \\
 \hline
 mom & moment of inertia \\
 \hline
@@ -355,25 +390,6 @@ pt & point \\
 \end{table}
 
 \newpage
-\section{File Naming Conventions}
-
-\subsection{Julia Files}
-\begin{itemize}
-    \item Use \texttt{snake\_case.jl} for file names (Julia convention)
-    \item Module files use \texttt{CamelCase.jl} matching the module name
-    \item File names should reflect their primary content
-    \item Type definition files may use \texttt{CamelCase.jl} matching the type name
-\end{itemize}
-
-\subsection{Examples}
-\begin{verbatim}
-AirshipDesign.jl          # Main module
-motor_placement.jl        # Functions
-vehicle_types.jl          # Type definitions
-get_design_parameters.jl  # Utility functions
-\end{verbatim}
-
-\newpage
 \section{Testing}
 
 \noindent All functions should have corresponding tests:
@@ -388,7 +404,7 @@ using YourModule
     p1_M = [0.0, 0.0, 0.0]
     p2_M = [3.0, 4.0, 0.0]
     
-    distance_M = calculate_distance_FUNC(p1_M, p2_M)
+    distance_M = calculate_distance_fnc(p1_M, p2_M)
     
     @test distance_M ≈ 5.0
     @test distance_M > 0
@@ -397,7 +413,7 @@ end
 @testset "Data Processing" begin
     input_data_M = [1.0, 2.0, 3.0, 4.0, 5.0]
     
-    result = process_data_FUNC(input_data_ARR)
+    result = process_data_fnc(input_data_ARR)
     
     @test length(result) == length(input_data_M)
     @test all(result .>= 0)
